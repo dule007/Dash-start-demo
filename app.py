@@ -1,51 +1,98 @@
-import dash_html_components as html
-import dash_leaflet as dl
-import dash_core_components as dcc
-import dash_leaflet.express as dlx
-from dash import Dash
-from dash.dependencies import Output, Input
-from dash_extensions.javascript import assign
+import pandas as pd
+import plotly.express as px  # (version 4.7.0 or higher)
+import plotly.graph_objects as go
+from dash import Dash, dcc, html, Input, Output  # pip install dash (version 2.0.0 or higher)
 
-# A few cities in Denmark.
-cities = [dict(name="Sarajevo", lat=43.8667, lon=18.4167),
-          dict(name="Banja Luka", lat=44.7667, lon=17.1833),
-          dict(name="Mostar", lat=43.3494, lon=17.8125)]
-# Create drop down options.
-dd_options = [dict(value=c["name"], label=c["name"]) for c in cities]
-dd_defaults = [o["value"] for o in dd_options]
-# Generate geojson with a maker for each city and name as tooltip.
-geojson = dlx.dicts_to_geojson([{**c, **dict(tooltip=c['name'])} for c in cities])
-# Create javascript function that filters on feature name.
-geojson_filter = assign("function(feature, context){return context.props.hideout.includes(feature.properties.name);}")
-# Create example app.
-app = Dash()
+
+
+
+
+app = Dash(__name__)
+
+# -- Import and clean data (importing csv into pandas)
+# df = pd.read_csv("intro_bees.csv")
+df = pd.read_csv("https://raw.githubusercontent.com/Coding-with-Adam/Dash-by-Plotly/master/Other/Dash_Introduction/intro_bees.csv")
+
+df = df.groupby(['State', 'ANSI', 'Affected by', 'Year', 'state_code'])[['Pct of Colonies Impacted']].mean()
+df.reset_index(inplace=True)
+print(df[:5])
+
+# ------------------------------------------------------------------------------
+# App layout
 app.layout = html.Div([
-    dl.Map(children=[
-        dl.TileLayer(),
-        dl.GeoJSON(data=geojson, options=dict(filter=geojson_filter), hideout=dd_defaults, id="geojson")
-    ], 
-    style={'width': '50%', 'height': '50vh'}, id="map"),
-    dcc.Dropdown(id="dd", value=dd_defaults, options=dd_options, clearable=False, multi=True),
-html.Div([
-    html.H1(id='number-out',style={'width':'20%'})
+
+    html.H1("Web Application Dashboards with Dash", style={'text-align': 'center'}),
+
+    dcc.Dropdown(id="slct_year",
+                 options=[
+                     {"label": "2015", "value": 2015},
+                     {"label": "2016", "value": 2016},
+                     {"label": "2017", "value": 2017},
+                     {"label": "2018", "value": 2018}],
+                 multi=False,
+                 value=2015,
+                 style={'width': "40%"}
+                 ),
+
+    html.Div(id='output_container', children=[]),
+    html.Br(),
+
+    dcc.Graph(id='my_bee_map', figure={})
+
 ])
-    
-])
 
 
-# Link drop down to geojson hideout prop (could also be done with a normal callback).
-app.clientside_callback("function(x){return x;}", Output("geojson", "hideout"), Input("dd", "value"))
-
-
-
-# hover over data 
+# ------------------------------------------------------------------------------
+# Connect the Plotly graphs with Dash Components
 @app.callback(
-    Output('number-out', 'children'),
-    [Input("dd", "hoverData")])
-def callback_image(hoverData):
-    #hoverData =123
-    print((hoverData[0]['value']))
-    return ' displayed after {} clicks'.format(hoverData[0]['value'])
+    [Output(component_id='output_container', component_property='children'),
+     Output(component_id='my_bee_map', component_property='figure')],
+    [Input(component_id='slct_year', component_property='value')]
+)
+def update_graph(option_slctd):
+    print(option_slctd)
+    print(type(option_slctd))
 
+    container = "The year chosen by user was: {}".format(option_slctd)
+
+    dff = df.copy()
+    dff = dff[dff["Year"] == option_slctd]
+    dff = dff[dff["Affected by"] == "Varroa_mites"]
+
+    # Plotly Express
+    fig = px.choropleth(
+        data_frame=dff,
+        locationmode='USA-states',
+        locations='state_code',
+        scope="usa",
+        color='Pct of Colonies Impacted',
+        hover_data=['State', 'Pct of Colonies Impacted'],
+        color_continuous_scale=px.colors.sequential.YlOrRd,
+        labels={'Pct of Colonies Impacted': '% of Bee Colonies'},
+        template='plotly_dark'
+    )
+
+    # Plotly Graph Objects (GO)
+    # fig = go.Figure(
+    #     data=[go.Choropleth(
+    #         locationmode='USA-states',
+    #         locations=dff['state_code'],
+    #         z=dff["Pct of Colonies Impacted"].astype(float),
+    #         colorscale='Reds',
+    #     )]
+    # )
+    #
+    # fig.update_layout(
+    #     title_text="Bees Affected by Mites in the USA",
+    #     title_xanchor="center",
+    #     title_font=dict(size=24),
+    #     title_x=0.5,
+    #     geo=dict(scope='usa'),
+    # )
+
+    return container, fig
+
+
+# ------------------------------------------------------------------------------
 if __name__ == '__main__':
-    app.run_server()
+    app.run_server(debug=True)
