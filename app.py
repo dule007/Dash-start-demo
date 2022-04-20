@@ -1,98 +1,78 @@
+import geojson
 import pandas as pd
-import plotly.express as px  # (version 4.7.0 or higher)
 import plotly.graph_objects as go
-from dash import Dash, dcc, html, Input, Output  # pip install dash (version 2.0.0 or higher)
+
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
 
 
+import plotly.graph_objects as go
+import json
+import urllib.request
+import random
 
 
+def read_geojson(url):
+    with urllib.request.urlopen(url) as url:
+        jdata = json.loads(url.read().decode())
+    return jdata 
 
-app = Dash(__name__)
+#irish_url = 'https://gist.githubusercontent.com/pnewall/9a122c05ba2865c3a58f15008548fbbd/raw/5bb4f84d918b871ee0e8b99f60dde976bb711d7c/ireland_counties.geojson'
 
-# -- Import and clean data (importing csv into pandas)
-# df = pd.read_csv("intro_bees.csv")
-df = pd.read_csv("https://raw.githubusercontent.com/Coding-with-Adam/Dash-by-Plotly/master/Other/Dash_Introduction/intro_bees.csv")
+#jdata = read_geojson(irish_url)
+def read_gejosn_2(path_to_file):
+    with open(path_to_file) as f:
+        gj = geojson.load(f)
+    return gj 
 
-df = df.groupby(['State', 'ANSI', 'Affected by', 'Year', 'state_code'])[['Pct of Colonies Impacted']].mean()
-df.reset_index(inplace=True)
-print(df[:5])
+file_f = 'test2.geojson'
 
-# ------------------------------------------------------------------------------
-# App layout
-app.layout = html.Div([
+jdata = read_gejosn_2(file_f)
+print(jdata)
+thelist = jdata['features']
+print("     THE LIST :::::: ",thelist)
+print("00000000000000000000000000000000000000000000000")
+locations =  jdata['id']
 
-    html.H1("Web Application Dashboards with Dash", style={'text-align': 'center'}),
+print("     THE LIST ->>>> idds :::::: ",locations)
+# thelist = jdata['features']
+# locations =  [ item['id'] for item in thelist ] 
+# print('locations: ', locations)
 
-    dcc.Dropdown(id="slct_year",
-                 options=[
-                     {"label": "2015", "value": 2015},
-                     {"label": "2016", "value": 2016},
-                     {"label": "2017", "value": 2017},
-                     {"label": "2018", "value": 2018}],
-                 multi=False,
-                 value=2015,
-                 style={'width': "40%"}
-                 ),
+# randomlist = []
+# for i in range(0,26):
+#     n = random.randint(0,10)
+#     randomlist.append(n)
 
-    html.Div(id='output_container', children=[]),
-    html.Br(),
+# z = randomlist
 
-    dcc.Graph(id='my_bee_map', figure={})
+# print('z: ', z)
+# mapboxt = open("mapbox_token.txt").read().rstrip() #my mapbox_access_token  must be used only for special mapbox style
+# print('mapboxt: ', mapboxt)
 
-])
+# fig= go.Figure(go.Choroplethmapbox(z=z, # This is the data.
+#                             locations=locations,
+#                             colorscale='reds',
+#                             colorbar=dict(thickness=20, ticklen=3),
+#                             geojson=jdata,
+#                             text=locations,
+#                             hoverinfo='all',
+#                             marker_line_width=1, marker_opacity=0.75))
+                            
+                            
+# fig.update_layout(title_text= 'Symptom Map',
+#                   title_x=0.5, width = 700,height=700,
+#                   mapbox = dict(center= dict(lat=53.425049,  lon=-7.944620),
+#                                  accesstoken= mapboxt,
+#                                  style='basic',
+#                                  zoom=5.6,
+#                                ));
 
+# app = dash.Dash()
+# app.layout = html.Div([
+#     dcc.Graph(figure=fig)
+# ])
 
-# ------------------------------------------------------------------------------
-# Connect the Plotly graphs with Dash Components
-@app.callback(
-    [Output(component_id='output_container', component_property='children'),
-     Output(component_id='my_bee_map', component_property='figure')],
-    [Input(component_id='slct_year', component_property='value')]
-)
-def update_graph(option_slctd):
-    print(option_slctd)
-    print(type(option_slctd))
-
-    container = "The year chosen by user was: {}".format(option_slctd)
-
-    dff = df.copy()
-    dff = dff[dff["Year"] == option_slctd]
-    dff = dff[dff["Affected by"] == "Varroa_mites"]
-
-    # Plotly Express
-    fig = px.choropleth(
-        data_frame=dff,
-        locationmode='USA-states',
-        locations='state_code',
-        scope="usa",
-        color='Pct of Colonies Impacted',
-        hover_data=['State', 'Pct of Colonies Impacted'],
-        color_continuous_scale=px.colors.sequential.YlOrRd,
-        labels={'Pct of Colonies Impacted': '% of Bee Colonies'},
-        template='plotly_dark'
-    )
-
-    # Plotly Graph Objects (GO)
-    # fig = go.Figure(
-    #     data=[go.Choropleth(
-    #         locationmode='USA-states',
-    #         locations=dff['state_code'],
-    #         z=dff["Pct of Colonies Impacted"].astype(float),
-    #         colorscale='Reds',
-    #     )]
-    # )
-    #
-    # fig.update_layout(
-    #     title_text="Bees Affected by Mites in the USA",
-    #     title_xanchor="center",
-    #     title_font=dict(size=24),
-    #     title_x=0.5,
-    #     geo=dict(scope='usa'),
-    # )
-
-    return container, fig
-
-
-# ------------------------------------------------------------------------------
-if __name__ == '__main__':
-    app.run_server(debug=True)
+# if __name__ == '__main__':
+#     app.run_server(debug=True)
