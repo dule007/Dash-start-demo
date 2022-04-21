@@ -8,6 +8,7 @@ import numpy as np
 import json
 import plotly.express as px
 
+# hover data 
 
 df = pd.read_csv('ba.csv')
 
@@ -50,3 +51,6 @@ def callback_image(hoverData):
 
 if __name__ == '__main__':
     app.run_server()
+
+
+
