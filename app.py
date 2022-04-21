@@ -26,7 +26,7 @@ def read_gejosn_2(path_to_file):
         gj = geojson.load(f)
     return gj 
 
-file_f = 'test2.geojson'
+file_f = 'data/test2.geojson'
 
 jdata = read_gejosn_2(file_f)
 print(jdata)
@@ -48,7 +48,7 @@ for i in range(0,26):
 z = randomlist
 
 print('z: ', z)
-mapboxt = open("mapbox_token.txt").read().rstrip() #my mapbox_access_token  must be used only for special mapbox style
+mapboxt = open("data/mapbox_token.txt").read().rstrip() #my mapbox_access_token  must be used only for special mapbox style
 print('mapboxt: ', mapboxt)
 
 fig= go.Figure(go.Choroplethmapbox(z=z, # This is the data.
