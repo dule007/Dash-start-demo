@@ -1,0 +1,1 @@
+Graph or dashboard, which displays data that is displayed during the display through the cities indicated on the map and prints the data on the right side of the dashboard
